@@ -1,0 +1,147 @@
+ Linect: A MS Kinect Linux Driver
+==================================
+
+Note : Driver still in development.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+Author: Arturo Casal
+
+Driver based on the stk11xx driver by Nicolas VIVIEN, 
+and the libfreenect library by OpenKinect Team.
+
+---------------------------------------------------------------------------------------------------
+
+Table of contents :
+
+1. Requirements
+
+2. Compilation
+
+3. Usage
+ 4.1 Option "freemotor"
+ 4.2 Option "freeled"
+
+4. Motor and led control
+
+5. Test v4l2 cameras
+
+6. License
+
+---------------------------------------------------------------------------------------------------
+
+1. Requirements
+
+Kernel 2.6.21 or higher
+Kinect device model 1414
+
+---------------------------------------------------------------------------------------------------
+
+2. Kernel module Compilation
+
+   To build the kernel module :
+   $ make
+
+   To install the kernel module :
+   # make install
+
+   Clean building :
+   $ make clean
+
+---------------------------------------------------------------------------------------------------
+
+3. Usage
+
+ 3.1 Option "freemotor" module (boolean)
+
+   default: freemotor=0
+
+   $ modprobe linect freemotor=1
+
+   If freemotor=0, the driver will reset the motor position to its default on startup (middle).
+   If freemotor=1, the driver won't reset the motor position.
+
+ 3.2 Option "freeled" module
+ 
+   default: freeled=0
+
+   $ modprobe linect freeled=1
+
+   If freeled=0, the driver will use the led to indicate the device status.
+   If freeled=1, the driver won't use the led.
+
+---------------------------------------------------------------------------------------------------
+
+4. Motor and led control
+
+Each Kinect device connected will have a directory at /proc/linect/X/, where X is the device ID.
+
+There you will find:
+
+   * "led": set led status (char and raw entry)
+
+	Values: 0=off, 1=green, 2=red, 3=yellow, 4=blink yellow, 5=blink green, 6=blink red yellow
+
+	Usage: bash => $ echo 2 > /proc/linect/1/led (set led red)
+	       c => char val = 2; 
+		    df = fopen("/proc/linect/1/led", "a"); 
+		    fwrite(&val, 1, 1, df);
+
+   * "motor_char": set motor degrees (char entry)
+
+	Values: [0, 62], 0=down, 31=middle, 62=up.
+
+	Usage: bash => $ echo 47 > /proc/linect/1/motor_char (set motor to +16º)
+
+   * "motor_raw": set motor degrees (raw entry)
+
+	Values: [0, 62], 0=down, 31=middle, 62=up.
+
+	Usage: c => char val = 2; 
+		    df = fopen("/proc/linect/1/motor_raw", "a"); 
+		    fwrite(&val, 1, 1, df); //(set motor to -29º)
+
+   * "accel_char": get accelerometer info (char entry)
+
+	Values: [0, 62], 0=down, 31=middle, 62=up.
+
+	Usage: bash => $ cat /proc/linect/1/accel_info
+
+   * "accel_raw": get accelerometer info (raw entry)
+
+	Values: [0, 62], 0=down, 31=middle, 62=up.
+
+	Usage: c => short xyz[3]; //(2 bytes each)
+		    df = fopen("/proc/linect/1/accel_raw", "r"); 
+		    fread(&xyz, 2, 3, df);
+		    printf("Accel values x=%f y=%f z=%f\n", (double)xyz[0]/(9.80665*819),
+		    (double)xyz[1]/(9.80665*819), (double)xyz[2]/(9.80665*819));
+
+To convert the accelerometer values to device axis values : double dvalue = value / (9.80665*819);
+
+---------------------------------------------------------------------------------------------------
+
+5. Test v4l2 cameras
+
+To use mplayer:
+
+VGA Color Camera
+$ mplayer tv:// -tv driver=v4l2:width=640:height=480:outfmt=rgb24:device=/dev/video0
+
+Depth Color Camera (synthetic)
+$ mplayer tv:// -tv driver=v4l2:width=640:height=480:outfmt=rgb24:device=/dev/video1
+
+---------------------------------------------------------------------------------------------------
+
+6. License
+
+The linect kernel module is distributed under the GPL licence.
+
